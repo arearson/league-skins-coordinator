@@ -115,7 +115,7 @@ def get_puuid(game_name, tag_line, region, api_key):
         f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/"
         f"{urllib.parse.quote(game_name)}/{urllib.parse.quote(tag_line)}"
     )
-    "https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/hydrophantom/na1?api_key=RGAPI-5c1f4211-3092-437c-9b59-ca0db41afdaf"
+    "https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/hydrophantom/na1"
     data = api_get(url, api_key)
     if not data:
         raise RuntimeError(f"Couldn't find a Riot account for {game_name}#{tag_line}")
