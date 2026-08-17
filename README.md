@@ -45,7 +45,7 @@ their end.
 ## Step 3 — Coordinate skins
 
 Once you've collected everyone's `*_skins.json` files, open the
-**LoL Skin Coordinator** (`skin_coordinator.html` — just double-click it,
+**LoL Skin Coordinator** (`index.html` — just double-click it,
 it opens in any browser) and upload them all. It shows, per champion or
 per skin line, who owns what, who has shards ready to craft, and who's
 missing a skin entirely.
