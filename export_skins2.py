@@ -14,13 +14,13 @@ This only ever talks to https://127.0.0.1:<port> - your own computer's
 League client - it does not contact any third-party server.
 """
 
+import base64
 import json
 import os
-import sys
-import base64
 import ssl
-import urllib.request
+import sys
 import urllib.error
+import urllib.request
 from pathlib import Path
 
 
@@ -219,11 +219,9 @@ def get_crafting_loot(opener, port, champ_names, skin_catalog):
     craftable = []
     for item in loot:
         loot_id = item.get("lootId", "") or ""
-        is_skin_loot = (
-            loot_id.startswith("CHAMPION_SKIN")
-            or loot_id.startswith("SKIN_")
-            or item.get("type") in ("CHAMPION_SKIN", "STATSTONE_SKIN_UPGRADE")
-        )
+        is_skin_loot = loot_id.startswith(("CHAMPION_SKIN", "SKIN_")) or item.get(
+            "type"
+        ) in ("CHAMPION_SKIN", "STATSTONE_SKIN_UPGRADE")
         if not is_skin_loot:
             continue
 

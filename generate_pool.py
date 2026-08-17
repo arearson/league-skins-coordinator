@@ -35,12 +35,12 @@ import directly into the Skin Coordinator.
 import json
 import sys
 import time
-import urllib.request
 import urllib.error
 import urllib.parse
-from pathlib import Path
-from datetime import datetime, timezone
+import urllib.request
 from collections import Counter
+from datetime import datetime, timezone
+from pathlib import Path
 
 # Platform routing values (where your account/summoner data lives) mapped to
 # their regional routing values (used for match history + account lookup).
@@ -74,9 +74,17 @@ REQUEST_DELAY_SECONDS = 1.3  # stays comfortably under dev-key rate limits
 
 def api_get(url, api_key):
     # req = urllib.request.Request(url, headers={"X-Riot-Token": api_key})
-    new_url = url + f"?api_key={api_key}"
-    req = urllib.request.Request(new_url)
-    print(new_url)
+    # new_url = url + f"?api_key={api_key}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-Riot-Token": api_key,
+        },
+    )
+    print(url)
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             result = json.loads(resp.read().decode("utf-8"))
@@ -249,7 +257,7 @@ def main():
         f"Fetching your last {match_sample_size} ranked matches (this takes a while, ~1-2 min)..."
     )
     match_ids = get_match_ids(
-        puuid, region, api_key, match_sample_size, queue=420
+        puuid, region, api_key, match_sample_size, queue=None
     )  # 420 = ranked solo/duo
     time.sleep(REQUEST_DELAY_SECONDS)
 
