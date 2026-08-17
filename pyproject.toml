@@ -1,0 +1,7 @@
+[project]
+name = "league-skins"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "pyinstaller>=6.21.0",
+]

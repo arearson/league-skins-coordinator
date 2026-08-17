@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Skin Coordinator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { margin: 0; background: #0a0e14; }
+  .display-font { font-family: 'Cinzel', serif; }
+  * { font-family: 'Inter', 'Segoe UI', sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useCallback } = React;
+
+// ---------- tiny inline icon set (no external icon package needed) ----------
+const Icon = ({ path, size = 16, strokeWidth = 2, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {path}
+  </svg>
+);
+const UploadIcon = (p) => <Icon {...p} path={<> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></>} />;
+const UsersIcon = (p) => <Icon {...p} path={<> <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>} />;
+const SearchIcon = (p) => <Icon {...p} path={<> <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></>} />;
+const XIcon = (p) => <Icon {...p} path={<> <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>} />;
+const SparklesIcon = (p) => <Icon {...p} path={<path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />} />;
+const HammerIcon = (p) => <Icon {...p} path={<> <path d="M15 12l-8.5 8.5a2.12 2.12 0 1 1-3-3L12 9" /><path d="M17.64 15 22 10.64" /><path d="M20.91 11.7 15.3 6.09a1 1 0 0 0-1.41 0l-2.5 2.5a1 1 0 0 0 0 1.41l5.61 5.61a1 1 0 0 0 1.41 0l2.5-2.5a1 1 0 0 0 0-1.41z" /></>} />;
+const ShoppingBagIcon = (p) => <Icon {...p} path={<> <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></>} />;
+const ChevronDownIcon = (p) => <Icon {...p} path={<polyline points="6 9 12 15 18 9" />} />;
+const AlertCircleIcon = (p) => <Icon {...p} path={<> <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>} />;
+const PlusIcon = (p) => <Icon {...p} path={<> <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>} />;
+const TargetIcon = (p) => <Icon {...p} path={<> <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></>} />;
+const PuzzleIcon = (p) => <Icon {...p} path={<path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.315 8.685c.23-.23.556-.338.878-.29.493.074.84.504 1.02.968a2.5 2.5 0 1 0 3.237-3.237c-.464-.18-.894-.527-.967-1.02a1.026 1.026 0 0 1 .289-.877l1.568-1.568A2.402 2.402 0 0 1 12.04 2c.617 0 1.234.236 1.704.706l1.611 1.611c.23.23.338.556.29.878-.074.493-.504.84-.968 1.02a2.5 2.5 0 1 0 3.237 3.237c.18-.464.527-.894 1.02-.967.322-.048.648.06.878.29Z" />} />;
+const DownloadIcon = (p) => <Icon {...p} path={<> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>} />;
+const FolderUpIcon = (p) => <Icon {...p} path={<> <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" /><path d="M12 10v6" /><path d="m9 13 3-3 3 3" /></>} />;
+
+// ---------- storage helpers ----------
+// Standalone file: uses ordinary browser localStorage (persists per-browser,
+// on this computer only). Each group member who opens this file locally
+// keeps their own saved roster; sharing happens via the exported .json files.
+const ROSTER_KEY = "lol-coordinator:rosters";
+const POOLS_KEY = "lol-coordinator:pools";
+
+function loadRosters() {
+  try {
+    const raw = localStorage.getItem(ROSTER_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+function saveRosters(rosters) {
+  try {
+    localStorage.setItem(ROSTER_KEY, JSON.stringify(rosters));
+  } catch (e) {
+    console.error("Failed to save rosters", e);
+  }
+}
+function loadPools() {
+  try {
+    const raw = localStorage.getItem(POOLS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+function savePools(pools) {
+  try {
+    localStorage.setItem(POOLS_KEY, JSON.stringify(pools));
+  } catch (e) {
+    console.error("Failed to save pools", e);
+  }
+}
+
+// ---------- visual primitives ----------
+const HexDivider = () => (
+  <div className="flex items-center gap-3 my-6">
+    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#3a4a5c] to-[#3a4a5c]" />
+    <div className="w-1.5 h-1.5 rotate-45 bg-[#c89b3c]" />
+    <div className="h-px flex-1 bg-gradient-to-l from-transparent via-[#3a4a5c] to-[#3a4a5c]" />
+  </div>
+);
+
+const StatusPill = ({ status }) => {
+  const styles = {
+    owned: "bg-[#0a3d2e] text-[#5fd9a8] border-[#1a6b4f]",
+    craftable: "bg-[#3d2e0a] text-[#e8c468] border-[#6b531a]",
+    missing: "bg-[#1c1f26] text-[#5c6470] border-[#2a2f38]",
+  };
+  const labels = { owned: "Owned", craftable: "Craftable", missing: "Missing" };
+  const icons = { owned: SparklesIcon, craftable: HammerIcon, missing: ShoppingBagIcon };
+  const IconC = icons[status];
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border text-[11px] font-medium tracking-wide uppercase ${styles[status]}`}>
+      <IconC size={11} strokeWidth={2.5} />
+      {labels[status]}
+    </span>
+  );
+};
+
+// Given a list of players and, for each player, the set of champions they're
+// eligible to be assigned (already filtered to a specific skin line and
+// eligibility mode), enumerate EVERY way to assign a distinct champion to
+// every player. Returns an array of assignments: [{ player: champion, ... }, ...].
+// Returns [] if no full assignment covering every player exists.
+//
+// This is backtracking search over the bipartite graph rather than a single
+// augmenting-path match, since we want all valid teams, not just one.
+// Players are searched in order of fewest eligible options first, which fails
+// fast on impossible branches and keeps the search efficient in practice.
+// MAX_RESULTS is a safety valve against pathological inputs (e.g. someone
+// pooling 30+ champions that all belong to one giant skin line) — it does not
+// kick in for realistic pool sizes.
+const MAX_TEAM_COMBINATIONS = 2000;
+
+function findAllTeamAssignments(players, eligibleChampsByPlayer) {
+  if (players.length === 0) return [];
+
+  // Bail immediately if any player has zero eligible champions.
+  for (const p of players) {
+    if (!(eligibleChampsByPlayer[p] || []).length) return [];
+  }
+
+  // Search players with fewer options first — prunes dead branches earlier.
+  const order = [...players].sort(
+    (a, b) => (eligibleChampsByPlayer[a] || []).length - (eligibleChampsByPlayer[b] || []).length
+  );
+
+  const results = [];
+  const current = {};
+  const usedChamps = new Set();
+
+  function backtrack(index) {
+    if (results.length >= MAX_TEAM_COMBINATIONS) return;
+    if (index === order.length) {
+      results.push({ ...current });
+      return;
+    }
+    const player = order[index];
+    const candidates = eligibleChampsByPlayer[player] || [];
+    for (const champ of candidates) {
+      if (usedChamps.has(champ)) continue;
+      if (results.length >= MAX_TEAM_COMBINATIONS) return;
+      usedChamps.add(champ);
+      current[player] = champ;
+      backtrack(index + 1);
+      usedChamps.delete(champ);
+      delete current[player];
+    }
+  }
+
+  backtrack(0);
+  return results;
+}
+
+function SkinCoordinator() {
+  const [rosters, setRosters] = useState({});
+  const [pools, setPools] = useState({}); // { playerName: [championName, ...] }
+  const [loading, setLoading] = useState(true);
+  const [dragOver, setDragOver] = useState(false);
+  const [search, setSearch] = useState("");
+  const [expandedGroup, setExpandedGroup] = useState(null);
+  const [groupBy, setGroupBy] = useState("champion"); // "champion" | "skinLine"
+  const [view, setView] = useState("collection"); // "collection" | "theorycraft"
+  const [toast, setToast] = useState(null);
+  const [fileError, setFileError] = useState(null);
+  const [poolPicker, setPoolPicker] = useState(null); // player name currently adding a champ, or null
+  const [poolSearch, setPoolSearch] = useState("");
+  const [importTarget, setImportTarget] = useState(null); // player name currently importing a pool file
+  const poolPickerRef = React.useRef(null);
+  const poolImportInputRef = React.useRef(null);
+
+  useEffect(() => {
+    if (!poolPicker) return;
+    const handleClickOutside = (e) => {
+      if (poolPickerRef.current && !poolPickerRef.current.contains(e.target)) {
+        setPoolPicker(null);
+        setPoolSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [poolPicker]);
+
+  useEffect(() => {
+    setRosters(loadRosters());
+    setPools(loadPools());
+    setLoading(false);
+  }, []);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleFiles = useCallback((fileList) => {
+    setFileError(null);
+    const files = Array.from(fileList).filter((f) => f.name.endsWith(".json"));
+    if (files.length === 0) {
+      setFileError("Please upload .json files exported by the Skin Exporter tool.");
+      return;
+    }
+
+    let remaining = files.length;
+    const next = { ...rosters };
+    let added = 0;
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data.summonerName || !Array.isArray(data.ownedSkins)) {
+            setFileError(`"${file.name}" doesn't look like a valid export file.`);
+          } else {
+            next[data.summonerName] = {
+              ownedSkins: data.ownedSkins || [],
+              craftingLoot: data.craftingLoot || [],
+              updatedAt: new Date().toISOString(),
+            };
+            added++;
+          }
+        } catch {
+          setFileError(`Couldn't read "${file.name}" — is it a valid export file?`);
+        }
+        remaining--;
+        if (remaining === 0) {
+          if (added > 0) {
+            setRosters(next);
+            saveRosters(next);
+            showToast(`Added ${added} player${added > 1 ? "s" : ""} to the roster`);
+          }
+        }
+      };
+      reader.onerror = () => {
+        setFileError(`Couldn't read "${file.name}".`);
+        remaining--;
+      };
+      reader.readAsText(file);
+    });
+  }, [rosters]);
+
+  const removePlayer = (name) => {
+    const next = { ...rosters };
+    delete next[name];
+    setRosters(next);
+    saveRosters(next);
+  };
+
+  const addToPool = (player, championName) => {
+    if (!championName) return;
+    const current = pools[player] || [];
+    if (current.includes(championName)) return;
+    const next = { ...pools, [player]: [...current, championName].sort() };
+    setPools(next);
+    savePools(next);
+  };
+
+  const removeFromPool = (player, championName) => {
+    const current = pools[player] || [];
+    const next = { ...pools, [player]: current.filter((c) => c !== championName) };
+    setPools(next);
+    savePools(next);
+  };
+
+  // Export one player's pool to a small JSON file, shareable or re-importable.
+  const exportPool = (player) => {
+    const data = {
+      poolExportVersion: 1,
+      player,
+      champions: pools[player] || [],
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeName = player.replace(/[^a-zA-Z0-9_-]/g, "_");
+    a.href = url;
+    a.download = `${safeName}_pool.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Import a pool file for a specific player. Merges with (doesn't replace)
+  // whatever is already in their pool, so re-importing is always safe.
+  const importPoolFile = (player, file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        const incoming = Array.isArray(data.champions) ? data.champions : Array.isArray(data) ? data : null;
+        if (!incoming) {
+          setFileError(`"${file.name}" doesn't look like a valid pool file.`);
+          return;
+        }
+        const current = pools[player] || [];
+        const merged = Array.from(new Set([...current, ...incoming])).sort();
+        const added = merged.length - current.length;
+        const next = { ...pools, [player]: merged };
+        setPools(next);
+        savePools(next);
+        showToast(added > 0 ? `Added ${added} champion${added > 1 ? "s" : ""} to ${player}'s pool` : `No new champions to add for ${player}`);
+      } catch {
+        setFileError(`Couldn't read "${file.name}" — is it a valid pool file?`);
+      }
+    };
+    reader.onerror = () => setFileError(`Couldn't read "${file.name}".`);
+    reader.readAsText(file);
+  };
+
+  const players = Object.keys(rosters).sort();
+
+  const groupedData = useMemo(() => {
+    const map = {};
+    const addEntry = (groupKey, groupLabel, player, skinLabel, bucket) => {
+      if (!map[groupKey]) map[groupKey] = { key: groupKey, label: groupLabel, players: {} };
+      if (!map[groupKey].players[player]) map[groupKey].players[player] = { owned: [], craftable: [] };
+      map[groupKey].players[player][bucket].push(skinLabel);
+    };
+
+    for (const [player, data] of Object.entries(rosters)) {
+      for (const skin of data.ownedSkins) {
+        if (groupBy === "champion") {
+          const cid = skin.championId;
+          if (cid == null) continue;
+          addEntry(cid, skin.championName || `Champion ${cid}`, player, skin.name, "owned");
+        } else {
+          const lines = skin.skinLines && skin.skinLines.length > 0 ? skin.skinLines : ["No Set"];
+          for (const line of lines) {
+            addEntry(line, line, player, `${skin.name} (${skin.championName || "?"})`, "owned");
+          }
+        }
+      }
+      for (const loot of data.craftingLoot) {
+        if (groupBy === "champion") {
+          const cid = loot.championId;
+          if (cid == null) continue;
+          addEntry(cid, loot.championName || `Champion ${cid}`, player, loot.skinName, "craftable");
+        } else {
+          const lines = loot.skinLines && loot.skinLines.length > 0 ? loot.skinLines : ["No Set"];
+          for (const line of lines) {
+            addEntry(line, line, player, `${loot.skinName} (${loot.championName || "?"})`, "craftable");
+          }
+        }
+      }
+    }
+    return map;
+  }, [rosters, groupBy]);
+
+  const groupList = useMemo(() => {
+    let list = Object.values(groupedData).sort((a, b) => {
+      if (a.label === "No Set") return 1;
+      if (b.label === "No Set") return -1;
+      return a.label.localeCompare(b.label);
+    });
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((c) => c.label.toLowerCase().includes(q));
+    }
+    return list;
+  }, [groupedData, search]);
+
+  // ---------- theory crafting derived data ----------
+
+  // Every champion name we've ever seen across all rosters (for the pool picker).
+  const allChampionNames = useMemo(() => {
+    const set = new Set();
+    for (const data of Object.values(rosters)) {
+      for (const skin of data.ownedSkins) if (skin.championName) set.add(skin.championName);
+      for (const loot of data.craftingLoot) if (loot.championName) set.add(loot.championName);
+    }
+    return Array.from(set).sort();
+  }, [rosters]);
+
+  // Per player: set of champions they have at least one owned OR craftable skin for,
+  // and per-champion which skin lines those skins belong to.
+  // playerChampSkins[player][championName] = { owned: [{name, skinLines}], craftable: [...] }
+  const playerChampSkins = useMemo(() => {
+    const map = {};
+    for (const [player, data] of Object.entries(rosters)) {
+      map[player] = {};
+      for (const skin of data.ownedSkins) {
+        const cn = skin.championName;
+        if (!cn) continue;
+        if (!map[player][cn]) map[player][cn] = { owned: [], craftable: [] };
+        map[player][cn].owned.push({ name: skin.name, skinLines: skin.skinLines || [] });
+      }
+      for (const loot of data.craftingLoot) {
+        const cn = loot.championName;
+        if (!cn) continue;
+        if (!map[player][cn]) map[player][cn] = { owned: [], craftable: [] };
+        map[player][cn].craftable.push({ name: loot.skinName, skinLines: loot.skinLines || [] });
+      }
+    }
+    return map;
+  }, [rosters]);
+
+  // Skin line -> set of champions known to belong to it, based on every skin
+  // we've seen across the whole group's exports. This is only as complete as
+  // the combined data we have — a champion whose skin in this line no one in
+  // the group owns or has as loot won't show up here.
+  const skinLineChampions = useMemo(() => {
+    const map = {}; // lineName -> Set(championName)
+    for (const data of Object.values(rosters)) {
+      for (const skin of data.ownedSkins) {
+        for (const line of skin.skinLines || []) {
+          if (!map[line]) map[line] = new Set();
+          if (skin.championName) map[line].add(skin.championName);
+        }
+      }
+      for (const loot of data.craftingLoot) {
+        for (const line of loot.skinLines || []) {
+          if (!map[line]) map[line] = new Set();
+          if (loot.championName) map[line].add(loot.championName);
+        }
+      }
+    }
+    return map;
+  }, [rosters]);
+
+  const skinLineNames = useMemo(
+    () => Object.keys(skinLineChampions).sort(),
+    [skinLineChampions]
+  );
+
+  // For each player, champions in their pool that they have NO skin for at all
+  // (neither owned nor craftable) — the "want to play but no skin yet" gap.
+  const poolGaps = useMemo(() => {
+    const result = {}; // player -> [championName, ...]
+    for (const player of players) {
+      const pool = pools[player] || [];
+      const owned = playerChampSkins[player] || {};
+      result[player] = pool.filter((champ) => {
+        const entry = owned[champ];
+        return !entry || (entry.owned.length === 0 && entry.craftable.length === 0);
+      });
+    }
+    return result;
+  }, [players, pools, playerChampSkins]);
+
+  // For each skin line, which champions in that line are covered by SOMEONE's
+  // pool (i.e. a player who wants to play them), and which are not covered by
+  // anyone's pool — those are the "flexibility" candidates: if just one more
+  // person picked up that champion, the group's collective pool would cover
+  // the whole set.
+  const skinLineFlexibility = useMemo(() => {
+    // championName -> [players who have it in their pool]
+    const champToPoolPlayers = {};
+    for (const [player, champList] of Object.entries(pools)) {
+      for (const champ of champList) {
+        if (!champToPoolPlayers[champ]) champToPoolPlayers[champ] = [];
+        champToPoolPlayers[champ].push(player);
+      }
+    }
+
+    return skinLineNames.map((line) => {
+      const champsInLine = Array.from(skinLineChampions[line]).sort();
+      const covered = [];
+      const uncovered = [];
+      for (const champ of champsInLine) {
+        const poolPlayers = champToPoolPlayers[champ] || [];
+        if (poolPlayers.length > 0) covered.push({ champ, players: poolPlayers });
+        else uncovered.push(champ);
+      }
+      return {
+        line,
+        total: champsInLine.length,
+        covered,
+        uncovered,
+        isComplete: uncovered.length === 0,
+        isCloseToComplete: uncovered.length > 0 && uncovered.length <= 2,
+      };
+    }).filter((entry) => entry.total > 0);
+  }, [skinLineNames, skinLineChampions, pools]);
+
+  // For each skin line, enumerate every full team: one DISTINCT champion per
+  // player, all from that line. Two modes:
+  //  - "pool": champion just needs to be in the player's pool
+  //  - "owned": champion needs to be in the player's pool AND actually have
+  //    an owned or craftable skin for that player (so the matching skin is
+  //    real, not aspirational)
+  // Only lines with at least one full match are returned. Each mode carries
+  // every valid combination, not just one.
+  const matchingTeams = useMemo(() => {
+    if (players.length === 0) return [];
+
+    const results = [];
+    for (const line of skinLineNames) {
+      const champsInLine = Array.from(skinLineChampions[line]);
+      if (champsInLine.length < players.length) continue; // can't possibly cover everyone
+
+      const poolEligible = {};
+      const ownedEligible = {};
+      for (const player of players) {
+        const playerPool = pools[player] || [];
+        const champSkins = playerChampSkins[player] || {};
+        poolEligible[player] = champsInLine.filter((c) => playerPool.includes(c));
+        ownedEligible[player] = champsInLine.filter((c) => {
+          if (!playerPool.includes(c)) return false;
+          const entry = champSkins[c];
+          if (!entry) return false;
+          // Must have a skin for this champion that is ITSELF part of this
+          // specific skin line — having some unrelated skin for the same
+          // champion (e.g. a classic skin) doesn't count toward this line.
+          const ownedInLine = entry.owned.some((s) => (s.skinLines || []).includes(line));
+          const craftableInLine = entry.craftable.some((s) => (s.skinLines || []).includes(line));
+          return ownedInLine || craftableInLine;
+        });
+      }
+
+      const ownedTeams = findAllTeamAssignments(players, ownedEligible);
+      const poolTeamsAll = findAllTeamAssignments(players, poolEligible);
+
+      // Drop pool-only combos that are identical to an already-listed owned
+      // combo, so we're not repeating the same team twice under two labels.
+      const ownedKeys = new Set(ownedTeams.map((t) => players.map((p) => t[p]).join("|")));
+      const poolTeams = poolTeamsAll.filter((t) => !ownedKeys.has(players.map((p) => t[p]).join("|")));
+
+      if (ownedTeams.length > 0 || poolTeams.length > 0) {
+        results.push({
+          line,
+          ownedTeams,
+          poolTeams,
+          ownedHitCap: ownedTeams.length >= MAX_TEAM_COMBINATIONS,
+          poolHitCap: poolTeamsAll.length >= MAX_TEAM_COMBINATIONS,
+        });
+      }
+    }
+    return results;
+  }, [players, skinLineNames, skinLineChampions, pools, playerChampSkins]);
+
+  // For a given player + champion + skin line, what's their ownership status
+  // for a skin ON THAT LINE specifically? Used to color each name in a
+  // matched team individually. Must check that the owned/craftable skin
+  // actually belongs to this line — a player can own an unrelated skin for
+  // the same champion (e.g. a classic skin) without that counting here.
+  const getOwnershipStatus = (player, champ, line) => {
+    const entry = (playerChampSkins[player] || {})[champ];
+    if (!entry) return "missing";
+    if (entry.owned.some((s) => (s.skinLines || []).includes(line))) return "owned";
+    if (entry.craftable.some((s) => (s.skinLines || []).includes(line))) return "craftable";
+    return "missing";
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0a0e14] text-[#cdd6e0]">
+      <div className="fixed inset-0 pointer-events-none opacity-[0.04]" style={{
+        backgroundImage: "repeating-linear-gradient(60deg, #c89b3c 0px, transparent 1px, transparent 40px, #c89b3c 41px)"
+      }} />
+
+      <header className="relative border-b border-[#1f2630] bg-gradient-to-b from-[#0d1219] to-[#0a0e14]">
+        <div className="max-w-5xl mx-auto px-6 py-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rotate-45 border-2 border-[#c89b3c] flex items-center justify-center">
+              <div className="w-2 h-2 rotate-0 bg-[#c89b3c]" />
+            </div>
+            <span className="text-[11px] tracking-[0.25em] uppercase text-[#8b97a8]">Squad Inventory</span>
+          </div>
+          <h1 className="display-font text-4xl sm:text-5xl text-[#e8c468] mb-3 tracking-wide">Skin Coordinator</h1>
+          <p className="text-[#8b97a8] max-w-xl leading-relaxed">
+            Upload each player's exported inventory. See who already owns, can craft, or still needs a skin — by champion or by skin line.
+          </p>
+
+          <div className="flex gap-1 mt-8 -mb-10">
+            {[
+              { id: "collection", label: "Collection" },
+              { id: "theorycraft", label: "Theory Craft" },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => setView(opt.id)}
+                className={`px-5 py-2.5 text-sm font-medium rounded-t-sm border-t border-l border-r transition-colors ${
+                  view === opt.id
+                    ? "bg-[#0a0e14] border-[#2a2f38] text-[#e8c468]"
+                    : "bg-[#0d1219] border-transparent text-[#5c6470] hover:text-[#8b97a8]"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-6 py-10">
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+          className={`relative rounded-sm border-2 border-dashed transition-colors p-8 text-center ${
+            dragOver ? "border-[#c89b3c] bg-[#c89b3c0d]" : "border-[#2a2f38] bg-[#0d1219]"
+          }`}
+        >
+          <input
+            type="file"
+            accept=".json"
+            multiple
+            id="file-input"
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+          <label htmlFor="file-input" className="cursor-pointer flex flex-col items-center gap-3">
+            <UploadIcon size={28} className="text-[#c89b3c]" strokeWidth={1.5} />
+            <div>
+              <p className="text-[#cdd6e0] font-medium">Drop exported skin files here, or click to browse</p>
+              <p className="text-sm text-[#5c6470] mt-1">Accepts the *_skins.json files from the Skin Exporter tool — drop several at once</p>
+            </div>
+          </label>
+        </div>
+
+        {fileError && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-[#e88989] bg-[#2a1414] border border-[#5c2424] rounded-sm px-3 py-2">
+            <AlertCircleIcon size={14} />
+            {fileError}
+          </div>
+        )}
+
+        {!loading && players.length > 0 && (
+          <div className="mt-6 flex flex-wrap gap-2">
+            {players.map((p) => (
+              <div key={p} className="flex items-center gap-2 bg-[#141a23] border border-[#2a2f38] rounded-sm pl-3 pr-2 py-1.5">
+                <UsersIcon size={13} className="text-[#c89b3c]" />
+                <span className="text-sm text-[#cdd6e0]">{p}</span>
+                <span className="text-xs text-[#5c6470]">
+                  {rosters[p].ownedSkins.length} owned · {rosters[p].craftingLoot.length} craftable
+                </span>
+                <button onClick={() => removePlayer(p)} className="ml-1 text-[#5c6470] hover:text-[#e88989] transition-colors">
+                  <XIcon size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <HexDivider />
+
+        {view === "collection" && (
+          !loading && players.length === 0 ? (
+            <div className="text-center py-16 text-[#5c6470]">
+              <p className="display-font text-xl text-[#3a4a5c] mb-2">No players yet</p>
+              <p className="text-sm">Upload exported files above to start comparing skins.</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="relative flex-1">
+                  <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5c6470]" />
+                  <input
+                    type="text"
+                    placeholder={groupBy === "champion" ? "Search champions..." : "Search skin lines..."}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-[#0d1219] border border-[#2a2f38] rounded-sm pl-9 pr-3 py-2.5 text-sm text-[#cdd6e0] placeholder-[#5c6470] focus:outline-none focus:border-[#c89b3c] transition-colors"
+                  />
+                </div>
+                <div className="flex border border-[#2a2f38] rounded-sm overflow-hidden shrink-0">
+                  {[
+                    { id: "champion", label: "By Champion" },
+                    { id: "skinLine", label: "By Skin Line" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => { setGroupBy(opt.id); setExpandedGroup(null); }}
+                      className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+                        groupBy === opt.id
+                          ? "bg-[#c89b3c] text-[#0a0e14]"
+                          : "bg-[#0d1219] text-[#8b97a8] hover:text-[#cdd6e0]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {groupList.length === 0 && (
+                  <p className="text-center text-[#5c6470] py-8 text-sm">No {groupBy === "champion" ? "champions" : "skin lines"} match "{search}"</p>
+                )}
+                {groupList.map((group) => {
+                  const isOpen = expandedGroup === group.key;
+                  const playersWithSomething = Object.keys(group.players).length;
+                  return (
+                    <div key={group.key} className="border border-[#2a2f38] bg-[#0d1219] rounded-sm overflow-hidden">
+                      <button
+                        onClick={() => setExpandedGroup(isOpen ? null : group.key)}
+                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#141a23] transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-[#e8c468]">{group.label}</span>
+                          <span className="text-xs text-[#5c6470]">
+                            {playersWithSomething} of {players.length} player{players.length !== 1 ? "s" : ""} have something
+                          </span>
+                        </div>
+                        <ChevronDownIcon size={16} className={`text-[#5c6470] transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                      </button>
+                      {isOpen && (
+                        <div className="border-t border-[#2a2f38] px-4 py-4 space-y-3">
+                          {players.map((p) => {
+                            const entry = group.players[p];
+                            return (
+                              <div key={p} className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
+                                <span className="text-sm text-[#8b97a8] w-32 shrink-0">{p}</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {entry?.owned?.length > 0 &&
+                                    entry.owned.map((s, i) => (
+                                      <span key={`o${i}`} className="inline-flex items-center gap-1">
+                                        <StatusPill status="owned" /> <span className="text-xs text-[#cdd6e0]">{s}</span>
+                                      </span>
+                                    ))}
+                                  {entry?.craftable?.length > 0 &&
+                                    entry.craftable.map((s, i) => (
+                                      <span key={`c${i}`} className="inline-flex items-center gap-1">
+                                        <StatusPill status="craftable" /> <span className="text-xs text-[#cdd6e0]">{s}</span>
+                                      </span>
+                                    ))}
+                                  {(!entry || (entry.owned.length === 0 && entry.craftable.length === 0)) && (
+                                    groupBy === "champion" ? (
+                                      <StatusPill status="missing" />
+                                    ) : (
+                                      <span className="text-xs text-[#3a4a5c] italic">none from this player</span>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )
+        )}
+
+        {view === "theorycraft" && (
+          !loading && players.length === 0 ? (
+            <div className="text-center py-16 text-[#5c6470]">
+              <p className="display-font text-xl text-[#3a4a5c] mb-2">No players yet</p>
+              <p className="text-sm">Upload exported files above, then build out champion pools here.</p>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {/* Champion pool editor */}
+              <section>
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="display-font text-lg text-[#e8c468] tracking-wide">Champion Pools</h2>
+                </div>
+                <p className="text-sm text-[#5c6470] mb-4">Add the champions each player wants to play. This drives the gap and flexibility views below.</p>
+
+                {/* Shared hidden file input used for importing any player's pool */}
+                <input
+                  ref={poolImportInputRef}
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files[0] && importTarget) {
+                      importPoolFile(importTarget, e.target.files[0]);
+                    }
+                    e.target.value = "";
+                    setImportTarget(null);
+                  }}
+                />
+
+                <div className="space-y-3">
+                  {players.map((p) => {
+                    const pickerOpen = poolPicker === p;
+                    const filteredOptions = allChampionNames
+                      .filter((c) => !(pools[p] || []).includes(c))
+                      .filter((c) => c.toLowerCase().includes(poolSearch.toLowerCase()));
+                    return (
+                      <div key={p} className="border border-[#2a2f38] bg-[#0d1219] rounded-sm p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-medium text-[#cdd6e0] flex items-center gap-2">
+                            <UsersIcon size={13} className="text-[#c89b3c]" /> {p}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => { setImportTarget(p); poolImportInputRef.current?.click(); }}
+                              title="Import pool from file"
+                              className="flex items-center gap-1 text-xs px-2 py-1.5 border border-[#2a2f38] rounded-sm text-[#5c6470] hover:text-[#8b97a8] hover:border-[#3a4a5c] transition-colors"
+                            >
+                              <FolderUpIcon size={12} />
+                            </button>
+                            <button
+                              onClick={() => exportPool(p)}
+                              title="Export pool to file"
+                              disabled={(pools[p] || []).length === 0}
+                              className="flex items-center gap-1 text-xs px-2 py-1.5 border border-[#2a2f38] rounded-sm text-[#5c6470] hover:text-[#8b97a8] hover:border-[#3a4a5c] transition-colors disabled:opacity-30 disabled:hover:text-[#5c6470] disabled:hover:border-[#2a2f38] disabled:cursor-not-allowed"
+                            >
+                              <DownloadIcon size={12} />
+                            </button>
+                            <div className="relative" ref={pickerOpen ? poolPickerRef : null}>
+                              <button
+                                onClick={() => {
+                                  if (pickerOpen) {
+                                    setPoolPicker(null);
+                                    setPoolSearch("");
+                                  } else {
+                                    setPoolPicker(p);
+                                    setPoolSearch("");
+                                  }
+                                }}
+                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 border border-[#2a2f38] rounded-sm text-[#8b97a8] hover:text-[#e8c468] hover:border-[#c89b3c] transition-colors"
+                              >
+                                <PlusIcon size={12} /> Add champion
+                              </button>
+                              {pickerOpen && (
+                                <div className="absolute right-0 mt-1 w-64 bg-[#141a23] border border-[#2a2f38] rounded-sm shadow-xl z-10 overflow-hidden">
+                                  <div className="p-2 border-b border-[#2a2f38]">
+                                    <input
+                                      autoFocus
+                                      type="text"
+                                      value={poolSearch}
+                                      onChange={(e) => setPoolSearch(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" && filteredOptions.length > 0) {
+                                          addToPool(p, filteredOptions[0]);
+                                          setPoolSearch("");
+                                        } else if (e.key === "Escape") {
+                                          setPoolPicker(null);
+                                          setPoolSearch("");
+                                        }
+                                      }}
+                                      placeholder="Search champions..."
+                                      className="w-full bg-[#0d1219] border border-[#2a2f38] rounded-sm px-2.5 py-1.5 text-sm text-[#cdd6e0] placeholder-[#5c6470] focus:outline-none focus:border-[#c89b3c]"
+                                    />
+                                  </div>
+                                  <div className="max-h-52 overflow-y-auto">
+                                    {filteredOptions.length === 0 ? (
+                                      <p className="text-xs text-[#5c6470] px-3 py-3">
+                                        {allChampionNames.filter((c) => !(pools[p] || []).includes(c)).length === 0
+                                          ? "Every seen champion is already in this pool."
+                                          : `No champions match "${poolSearch}"`}
+                                      </p>
+                                    ) : (
+                                      filteredOptions.map((c, i) => (
+                                        <button
+                                          key={c}
+                                          onClick={() => { addToPool(p, c); setPoolSearch(""); }}
+                                          className={`w-full text-left text-sm px-3 py-1.5 text-[#cdd6e0] hover:bg-[#1c2530] transition-colors ${i === 0 ? "bg-[#1c2530]" : ""}`}
+                                        >
+                                          {c}
+                                        </button>
+                                      ))
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(pools[p] || []).length === 0 && (
+                            <span className="text-xs text-[#5c6470] italic">No champions in pool yet</span>
+                          )}
+                          {(pools[p] || []).map((champ) => {
+                            const hasGap = poolGaps[p]?.includes(champ);
+                            return (
+                              <span
+                                key={champ}
+                                className={`inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-sm border text-xs ${
+                                  hasGap
+                                    ? "bg-[#2a1414] border-[#5c2424] text-[#e88989]"
+                                    : "bg-[#141a23] border-[#2a2f38] text-[#cdd6e0]"
+                                }`}
+                                title={hasGap ? "No owned or craftable skin for this champion yet" : ""}
+                              >
+                                {champ}
+                                {hasGap && <ShoppingBagIcon size={10} />}
+                                <button onClick={() => removeFromPool(p, champ)} className="text-[#5c6470] hover:text-[#e88989] transition-colors">
+                                  <XIcon size={10} />
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <HexDivider />
+
+              {/* Pool gaps summary */}
+              <section>
+                <h2 className="display-font text-lg text-[#e8c468] mb-1 tracking-wide flex items-center gap-2">
+                  <ShoppingBagIcon size={16} /> Skinless Picks
+                </h2>
+                <p className="text-sm text-[#5c6470] mb-4">Champions players want to play but don't own or have craftable skins for yet.</p>
+                {players.every((p) => (poolGaps[p] || []).length === 0) ? (
+                  <p className="text-sm text-[#5c6470] italic">Every pooled champion has at least one skin lined up — nice.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {players.filter((p) => (poolGaps[p] || []).length > 0).map((p) => (
+                      <div key={p} className="border border-[#2a2f38] bg-[#0d1219] rounded-sm px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="text-sm text-[#8b97a8] w-32 shrink-0">{p}</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {poolGaps[p].map((champ) => (
+                            <span key={champ} className="text-xs px-2 py-0.5 rounded-sm bg-[#2a1414] border border-[#5c2424] text-[#e88989]">
+                              {champ}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <HexDivider />
+
+              {/* Full team matching per skin line */}
+              <section>
+                <h2 className="display-font text-lg text-[#e8c468] mb-1 tracking-wide flex items-center gap-2">
+                  <TargetIcon size={16} /> Matching Teams
+                </h2>
+                <p className="text-sm text-[#5c6470] mb-4">
+                  Skin lines where every player can be assigned a different champion from their own pool, so the whole group could show up matching.
+                </p>
+                {matchingTeams.length === 0 ? (
+                  <p className="text-sm text-[#5c6470] italic">
+                    {players.length < 2
+                      ? "Add at least two players to look for a full-team match."
+                      : "No skin line currently has enough pool overlap to field a full matching team."}
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {matchingTeams.map(({ line, ownedTeams, poolTeams, ownedHitCap, poolHitCap }) => (
+                      <div key={line} className="border border-[#2a2f38] bg-[#0d1219] rounded-sm px-4 py-3">
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="font-medium text-[#cdd6e0]">{line}</span>
+                          {ownedTeams.length > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-sm bg-[#0a3d2e] text-[#5fd9a8] border border-[#1a6b4f]">
+                              <SparklesIcon size={11} /> Ready today
+                            </span>
+                          )}
+                        </div>
+
+                        {ownedTeams.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-[11px] uppercase tracking-wide text-[#5fd9a8] mb-1.5">
+                              With skins owned or craftable right now
+                              {ownedTeams.length > 1 && ` — ${ownedTeams.length} combination${ownedTeams.length > 1 ? "s" : ""}`}
+                            </p>
+                            <div className="space-y-1.5">
+                              {ownedTeams.map((team, i) => (
+                                <div key={i} className="flex flex-wrap gap-1.5">
+                                  {players.map((p) => {
+                                    const status = getOwnershipStatus(p, team[p], line);
+                                    const nameColor = status === "owned" ? "text-[#5fd9a8]" : status === "craftable" ? "text-[#e8c468]" : "text-[#8b97a8]";
+                                    return (
+                                      <span key={p} className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-sm bg-[#141a23] border border-[#2a2f38] text-[#cdd6e0]">
+                                        <span className={nameColor}>{p}</span> → {team[p]}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-[11px] text-[#5c6470] mt-1.5">
+                              <span className="text-[#5fd9a8]">Green</span> = skin owned · <span className="text-[#e8c468]">gold</span> = craftable from loot, not owned yet
+                            </p>
+                            {ownedHitCap && (
+                              <p className="text-[11px] text-[#5c6470] italic mt-1.5">
+                                Capped at {MAX_TEAM_COMBINATIONS} combinations — there may be more.
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {poolTeams.length > 0 && (
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-[#8b97a8] mb-1.5">
+                              {ownedTeams.length > 0 ? "Other combinations, from pools only" : "From pools only — some skins may still need buying/crafting"}
+                              {poolTeams.length > 1 && ` — ${poolTeams.length} combination${poolTeams.length > 1 ? "s" : ""}`}
+                            </p>
+                            <div className="space-y-1.5">
+                              {poolTeams.map((team, i) => (
+                                <div key={i} className="flex flex-wrap gap-1.5">
+                                  {players.map((p) => {
+                                    const status = getOwnershipStatus(p, team[p], line);
+                                    const nameColor = status === "owned" ? "text-[#5fd9a8]" : status === "craftable" ? "text-[#e8c468]" : "text-[#8b97a8]";
+                                    return (
+                                      <span key={p} className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-sm bg-[#141a23] border border-[#2a2f38] text-[#cdd6e0]">
+                                        <span className={nameColor}>{p}</span> → {team[p]}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                            {poolHitCap && (
+                              <p className="text-[11px] text-[#5c6470] italic mt-1.5">
+                                Capped at {MAX_TEAM_COMBINATIONS} combinations — there may be more.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <HexDivider />
+
+              {/* Skin line flexibility finder */}
+              <section>
+                <h2 className="display-font text-lg text-[#e8c468] mb-1 tracking-wide flex items-center gap-2">
+                  <PuzzleIcon size={16} /> Set Flexibility
+                </h2>
+                <p className="text-sm text-[#5c6470] mb-4">                  Skin lines where the group's pools almost cover the full set — pick up one of the listed champions and the set becomes fully covered by someone's pool.
+                </p>
+                {skinLineFlexibility.filter((l) => l.isCloseToComplete || l.isComplete).length === 0 ? (
+                  <p className="text-sm text-[#5c6470] italic">
+                    {skinLineFlexibility.length === 0
+                      ? "Add some champions to player pools to see set coverage here."
+                      : "No skin lines are close to full pool coverage yet."}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {skinLineFlexibility
+                      .filter((l) => l.isCloseToComplete || l.isComplete)
+                      .sort((a, b) => (a.isComplete === b.isComplete ? 0 : a.isComplete ? -1 : 1))
+                      .map((l) => (
+                        <div key={l.line} className="border border-[#2a2f38] bg-[#0d1219] rounded-sm px-4 py-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-[#cdd6e0]">{l.line}</span>
+                            {l.isComplete ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-sm bg-[#0a3d2e] text-[#5fd9a8] border border-[#1a6b4f]">
+                                <TargetIcon size={11} /> Fully covered
+                              </span>
+                            ) : (
+                              <span className="text-xs text-[#5c6470]">{l.covered.length} of {l.total} champions covered by a pool</span>
+                            )}
+                          </div>
+                          {!l.isComplete && (
+                            <div className="flex flex-wrap gap-1.5">
+                              <span className="text-xs text-[#5c6470] mr-1">Would complete the set:</span>
+                              {l.uncovered.map((champ) => (
+                                <span key={champ} className="text-xs px-2 py-0.5 rounded-sm bg-[#3d2e0a] border border-[#6b531a] text-[#e8c468]">
+                                  {champ}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          )
+        )}
+      </main>
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#141a23] border border-[#c89b3c] text-[#e8c468] text-sm px-4 py-2.5 rounded-sm shadow-xl">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<SkinCoordinator />);
+</script>
+</body>
+</html>
